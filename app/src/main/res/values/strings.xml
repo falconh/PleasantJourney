@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Pleasant Journey</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="prompt_platno">Plat Number</string>
+    <string name="prompt_destination">Destination</string>
+    <string name="action_submit">Submit</string>
+
+    <string name="title_activity_tracking">TrackingActivity</string>
+    <string name="title_longitude">Longitude</string>
+    <string name="title_latitude">Latitude</string>
+    <string name="title_current_speed">Current Speed</string>
+    <string name="title_overspeed">Overspeed</string>
+</resources>
