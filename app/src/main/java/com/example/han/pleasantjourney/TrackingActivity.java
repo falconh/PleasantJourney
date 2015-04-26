@@ -21,6 +21,7 @@ public class TrackingActivity extends ActionBarActivity {
     protected TextView Longitude ;
     protected TextView Speed ;
     protected Firebase falconhRef ;
+    protected Firebase mVehicleLocation;
     protected String platNo ;
     protected String destination ;
 
@@ -38,9 +39,10 @@ public class TrackingActivity extends ActionBarActivity {
         destination = getIntent().getStringExtra("destination");
 
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
-        falconhRef.child(platNo).child("Destination").setValue(destination);
+        mVehicleLocation = falconhRef.child("vehicleLocation");
+        mVehicleLocation.child(platNo).child("Destination").setValue(destination);
 
-        falconhRef.child(platNo).addValueEventListener(new ValueEventListener() {
+        mVehicleLocation.child(platNo).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange( DataSnapshot snapshot )
             {
@@ -78,7 +80,7 @@ public class TrackingActivity extends ActionBarActivity {
     {
         super.onDestroy();
         this.stopService(mServiceIntent);
-        Log.e("tracker","stop");
+        Log.i("tracker","stop");
     }
 
     @Override
