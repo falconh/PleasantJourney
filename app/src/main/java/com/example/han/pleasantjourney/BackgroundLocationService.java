@@ -21,6 +21,12 @@ package com.example.han.pleasantjourney;
         import android.widget.Toast;
         import android.support.v4.content.LocalBroadcastManager ;
 
+        //for sensors
+        import android.hardware.Sensor;
+        import android.hardware.SensorEvent;
+        import android.hardware.SensorEventListener;
+        import android.hardware.SensorManager;
+
         import com.google.android.gms.common.GooglePlayServicesClient;
         import com.google.android.gms.common.GooglePlayServicesUtil ;
         import com.google.android.gms.common.ConnectionResult ;
@@ -33,6 +39,7 @@ package com.example.han.pleasantjourney;
  //       import com.example.gpsemulator.GeofenceUtils.REQUEST_TYPE ;
 
         import com.firebase.client.* ;
+        import com.firebase.geofire.*;
 
 /**
  * BackgroundLocationService used for tracking user location in the background.
@@ -42,25 +49,42 @@ package com.example.han.pleasantjourney;
 public class BackgroundLocationService extends Service implements
         ConnectionCallbacks,
         OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+        SensorEventListener {
 
     IBinder mBinder = new LocalBinder();
-    Firebase falconhRef ;
-    int updateValue ;
+    //Firebase + GeoFire
+    protected Firebase falconhRef ;
+    protected Firebase mVehicleLocation ;
+    protected Firebase mGeoFire ;
+    protected Firebase mGeoFireData ;
+    protected GeoFire mGeoFireHash ;
+
+    //Plat number
     protected String fbPlatNo = "";
 
+    //Location service related
     private GoogleApiClient mLocationClient;
     private LocationRequest mLocationRequest;
+
+    //Sensors related
+    protected SensorManager mSensorManager;
+    protected Sensor mAccelerometer;
+    protected FusedSensorManager mFusedSensorManager ;
+    private boolean isAcceExist ;
+
     // Flag that indicates if a request is underway.
     private boolean mInProgress;
 
     private Boolean servicesAvailable = false;
 
+
+
     //Geofence related
-    List<Geofence> mCurrentGeofences ;
+    protected List<Geofence> mCurrentGeofences ;
     private IntentFilter mIntentFilter ;
     private PendingIntent mGeofencePendingIntent ;
-    List<LatLng> busStop = new ArrayList<LatLng>();
+    //List<LatLng> busStop = new ArrayList<LatLng>();
 
 
 
@@ -76,7 +100,10 @@ public class BackgroundLocationService extends Service implements
         Firebase.setAndroidContext(this);
         Log.e("firebase", "1");
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
-        updateValue = 0 ;
+        mVehicleLocation = falconhRef.child("vehicleLocation");
+        mGeoFire = falconhRef.child("GeoFire");
+        mGeoFireData = mGeoFire.child("geoFireData");
+        mGeoFireHash = new GeoFire(mGeoFire.child("geoFireHash"));
         //falconhRef.child("Update").setValue("0");
         mInProgress = false;
         // Create the LocationRequest object
@@ -104,8 +131,21 @@ public class BackgroundLocationService extends Service implements
         mLocationClient.connect();
         mGeofencePendingIntent = null ;
 
+        //Sensors
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        mFusedSensorManager = new FusedSensorManager();
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
-        //Geofence related
+        if(mAccelerometer != null){
+            isAcceExist = true ;
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            Log.i("LocationService","Accelerometer registered");
+        }
+        else{
+            isAcceExist = false ;
+            Log.e("LocationService","Accelerometer is not registered");
+        }
+
 
     }
 
@@ -130,7 +170,6 @@ public class BackgroundLocationService extends Service implements
 
         fbPlatNo = intent.getStringExtra("platno");
 
-        Log.e("onLocationChanged", "zz");
         if(!servicesAvailable || mLocationClient.isConnected() || mInProgress)
             return START_STICKY;
 
@@ -182,10 +221,12 @@ public class BackgroundLocationService extends Service implements
         // Report to the UI that the location was updated
         String msg = Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude());
-        updateValue++;
-        falconhRef.child(fbPlatNo).child("Latitude").setValue(String.valueOf(location.getLatitude()));
-        falconhRef.child(fbPlatNo).child("Longitude").setValue(String.valueOf(location.getLongitude()));
-        falconhRef.child(fbPlatNo).child("Speed").setValue(String.valueOf(location.getSpeed()/1000));
+
+        int speed = ValueRounder.roundDecimal(location.getSpeed() * Constants.HOUR_MULTIPLIER * Constants.UNIT_MULTIPLIERS, 0) ;
+
+        mVehicleLocation.child(fbPlatNo).child("Latitude").setValue(String.valueOf(location.getLatitude()));
+        mVehicleLocation.child(fbPlatNo).child("Longitude").setValue(String.valueOf(location.getLongitude()));
+        mVehicleLocation.child(fbPlatNo).child("Speed").setValue(String.valueOf(speed));
         Log.d("debug", msg);
         //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         appendLog(msg, Constants.LOCATION_FILE);
@@ -271,6 +312,12 @@ public class BackgroundLocationService extends Service implements
             // Destroy the current location client
             mLocationClient = null;
         }
+
+        //Unregister sensor listener
+        if( isAcceExist ){
+            mSensorManager.unregisterListener(this);
+        }
+
         // Display the connection status
         // Toast.makeText(this, DateFormat.getDateTimeInstance().format(new Date()) + ": Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
         appendLog(DateFormat.getDateTimeInstance().format(new Date()) + ": Stopped", Constants.LOG_FILE);
@@ -285,7 +332,7 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onConnected(Bundle bundle) {
         // Display the connection status
-        Log.e("onLocationChanged", "Connected");
+        Log.i("LocationService", "Connected");
         //Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
         // Request location updates using static settings
         startLocationUpdates();
@@ -323,7 +370,23 @@ public class BackgroundLocationService extends Service implements
         // attempt to re-establish the connection.
         //Log.i(TAG, "Connection suspended");
         mLocationClient.connect();
+
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+
+        if(isAcceExist){
+            if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+                mFusedSensorManager.setAcceValue(event.values);
+                mFusedSensorManager.calcAccelometer(SensorManager.GRAVITY_EARTH);
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
 
 }
