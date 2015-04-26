@@ -22,6 +22,10 @@ public class Constants {
     // Stores the connect / disconnect data in a text file
     public static final String LOG_FILE = "sdcard/log.txt";
 
+    //For the use of speed calculation
+    public static final int HOUR_MULTIPLIER = 3600;
+    public static final double UNIT_MULTIPLIERS = 0.001;
+
     private static final long GEOFENCE_EXPIRATION_IN_HOURS = 12;
 
     public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS =
