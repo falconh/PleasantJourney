@@ -8,8 +8,13 @@
     <string name="action_submit">Submit</string>
 
     <string name="title_activity_tracking">TrackingActivity</string>
+    <string name="title_current_coord">Current Coordinate</string>
     <string name="title_longitude">Longitude</string>
     <string name="title_latitude">Latitude</string>
-    <string name="title_current_speed">Current Speed</string>
+    <string name="title_speed">Current Speed / Speed Limit</string>
     <string name="title_overspeed">Overspeed</string>
+    <string name="value_latitude">0</string>
+    <string name="value_longitude">0</string>
+    <string name="value_speed">0</string>
+    <string name="value_speedLimit">0</string>
 </resources>
