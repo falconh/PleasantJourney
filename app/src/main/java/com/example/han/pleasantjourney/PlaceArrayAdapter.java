@@ -2,6 +2,7 @@ package com.example.han.pleasantjourney;
 
 /**
  * Created by Han on 5/11/2015.
+ * Credit to Mohit Gupt
  */
 
 import android.content.Context;
@@ -24,8 +25,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-public class PlaceArrayAdapter
-        extends ArrayAdapter<PlaceArrayAdapter.PlaceAutocomplete> implements Filterable {
+public class PlaceArrayAdapter extends ArrayAdapter<PlaceArrayAdapter.PlaceAutocomplete> implements
+        Filterable {
     private static final String TAG = "PlaceArrayAdapter";
     private GoogleApiClient mGoogleApiClient;
     private AutocompleteFilter mPlaceFilter;

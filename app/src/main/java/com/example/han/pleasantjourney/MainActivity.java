@@ -2,6 +2,7 @@ package com.example.han.pleasantjourney;
 
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.Toolbar;
@@ -41,6 +42,9 @@ public class MainActivity extends ActionBarActivity implements
     private AutoCompleteTextView destination;
     private GoogleApiClient mGoogleApiClient;
     private PlaceArrayAdapter mPlaceArrayAdapter;
+    private LatLng destinationLatLng ;
+    private String destinationName ;
+    private String chosenDestinationDescription;
 
 
     @Override
@@ -102,6 +106,7 @@ public class MainActivity extends ActionBarActivity implements
             final PlaceArrayAdapter.PlaceAutocomplete item = mPlaceArrayAdapter.getItem(position);
             final String placeId = String.valueOf(item.placeId);
             Log.i(LOG_TAG, "Selected: " + item.description);
+            chosenDestinationDescription = item.description.toString() ;
             PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
                     .getPlaceById(mGoogleApiClient, placeId);
             placeResult.setResultCallback(mUpdatePlaceDetailsCallback);
@@ -120,6 +125,9 @@ public class MainActivity extends ActionBarActivity implements
             }
             // Selecting the first object buffer.
             final Place place = places.get(0);
+
+            destinationLatLng = place.getLatLng();
+            destinationName = place.getName().toString();
         }
     };
 
@@ -128,7 +136,14 @@ public class MainActivity extends ActionBarActivity implements
 
         Intent secondActivity = new Intent(getApplicationContext(), TrackingActivity.class);
         secondActivity.putExtra("platno",platno.getText().toString());
-        secondActivity.putExtra("destination",destination.getText().toString());
+        if(destinationName == null ) {
+            secondActivity.putExtra("destination", destination.getText().toString());
+        }
+        else{
+            secondActivity.putExtra("destination", destinationName);
+        }
+        secondActivity.putExtra("destinationLatLng", Double.toString(destinationLatLng.latitude)
+                + "," + Double.toString(destinationLatLng.longitude));
         startActivity(secondActivity);
     }
 

@@ -80,7 +80,9 @@ public class BackgroundLocationService extends Service implements
 
     private Boolean servicesAvailable = false;
 
-
+    //destination coordinate
+    private static String destinationLatLng ;
+    private static LatLng destinationCoord ;
 
     //Geofence related
     protected List<Geofence> mCurrentGeofences ;
@@ -183,6 +185,12 @@ public class BackgroundLocationService extends Service implements
         super.onStartCommand(intent, flags, startId);
 
         fbPlatNo = intent.getStringExtra("platno");
+        destinationLatLng = intent.getStringExtra("destinationLatLng");
+
+        LatLngStringConvert tempConverter = new LatLngStringConvert(destinationLatLng);
+        tempConverter.convertStringLatLng();
+        destinationCoord = new LatLng(tempConverter.getLatitude(),tempConverter.getLongitude());
+
 
         if(!servicesAvailable || mLocationClient.isConnected() || mInProgress)
             return START_STICKY;

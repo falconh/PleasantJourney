@@ -23,6 +23,7 @@ public class TrackingActivity extends ActionBarActivity {
     protected Firebase mVehicleLocation;
     protected String platNo ;
     protected String destination ;
+    private String destinationLatLng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,10 +37,13 @@ public class TrackingActivity extends ActionBarActivity {
 
         platNo = getIntent().getStringExtra("platno");
         destination = getIntent().getStringExtra("destination");
+        destinationLatLng = getIntent().getStringExtra("destinationLatLng");
+
 
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
         mVehicleLocation = falconhRef.child("vehicleLocation");
         mVehicleLocation.child(platNo).child("Destination").setValue(destination);
+        mVehicleLocation.child(platNo).child("DestinationLatLng").setValue(destinationLatLng);
 
         mVehicleLocation.child(platNo).addValueEventListener(new ValueEventListener() {
             @Override
@@ -68,6 +72,7 @@ public class TrackingActivity extends ActionBarActivity {
 
         mServiceIntent = new Intent(this,BackgroundLocationService.class);
         mServiceIntent.putExtra("platno",platNo);
+        mServiceIntent.putExtra("destinationLatLng",destinationLatLng);
         this.startService(mServiceIntent);
         Log.e("tracker", "started");
 
