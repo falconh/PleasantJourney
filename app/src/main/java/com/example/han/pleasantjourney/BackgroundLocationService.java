@@ -27,7 +27,7 @@ package com.example.han.pleasantjourney;
         import android.hardware.SensorEventListener;
         import android.hardware.SensorManager;
 
-        import com.google.android.gms.common.GooglePlayServicesClient;
+        //GooglePlayServices related
         import com.google.android.gms.common.GooglePlayServicesUtil ;
         import com.google.android.gms.common.ConnectionResult ;
         import com.google.android.gms.common.api.GoogleApiClient;
@@ -70,8 +70,10 @@ public class BackgroundLocationService extends Service implements
     //Sensors related
     protected SensorManager mSensorManager;
     protected Sensor mAccelerometer;
+    protected Sensor mGyrometer;
     protected FusedSensorManager mFusedSensorManager ;
     private boolean isAcceExist ;
+    private boolean isGyroExist;
 
     // Flag that indicates if a request is underway.
     private boolean mInProgress;
@@ -143,6 +145,18 @@ public class BackgroundLocationService extends Service implements
         }
         else{
             isAcceExist = false ;
+            Log.e("LocationService","Accelerometer is not registered");
+        }
+
+        mGyrometer = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+        if(mGyrometer != null){
+            isGyroExist = true ;
+            mSensorManager.registerListener(this, mGyrometer, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            Log.i("LocationService","Accelerometer registered");
+        }
+        else{
+            isGyroExist = false ;
             Log.e("LocationService","Accelerometer is not registered");
         }
 
@@ -380,6 +394,12 @@ public class BackgroundLocationService extends Service implements
             if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
                 mFusedSensorManager.setAcceValue(event.values);
                 mFusedSensorManager.calcAccelometer(SensorManager.GRAVITY_EARTH);
+            }
+        }
+
+        if(isGyroExist){
+            if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+                mFusedSensorManager.setGyroValue(event.values);
             }
         }
     }

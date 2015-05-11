@@ -4,6 +4,8 @@ package com.example.han.pleasantjourney;
  * Created by Han on 3/12/2015.
  */
 import android.text.format.DateUtils ;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 public class Constants {
 
@@ -32,6 +34,13 @@ public class Constants {
             GEOFENCE_EXPIRATION_IN_HOURS * DateUtils.HOUR_IN_MILLIS;
 
     public static final float GEOFENCE_RADIUS = 10 ;
+
+    //Google Places API related
+    public static final LatLng southWest = new LatLng(-1.210626,100.493449);
+
+    public static final LatLng northEast = new LatLng(8.312580,104.651775);
+
+    public static final LatLngBounds MALAYSIA_VIEW = new LatLngBounds(southWest,northEast);
 
 
     /**
