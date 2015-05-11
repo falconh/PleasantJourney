@@ -15,7 +15,6 @@ import java.util.Map;
 
 public class TrackingActivity extends ActionBarActivity {
 
-    protected BackgroundLocationService tracker ;
     protected Intent mServiceIntent ;
     protected TextView Latitude ;
     protected TextView Longitude ;
