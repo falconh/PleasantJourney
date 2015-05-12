@@ -10,6 +10,7 @@ package com.example.han.pleasantjourney;
         import java.util.List ;
         import java.util.ArrayList ;
         import java.util.Arrays ;
+        import java.lang.Math ;
 
         import android.app.* ;
         import android.os.* ;
@@ -71,9 +72,11 @@ public class BackgroundLocationService extends Service implements
     protected SensorManager mSensorManager;
     protected Sensor mAccelerometer;
     protected Sensor mGyrometer;
+    protected Sensor mRotationVector;
     protected FusedSensorManager mFusedSensorManager ;
     private boolean isAcceExist ;
     private boolean isGyroExist;
+    private boolean isRotationVectorExist;
 
     // Flag that indicates if a request is underway.
     private boolean mInProgress;
@@ -83,6 +86,14 @@ public class BackgroundLocationService extends Service implements
     //destination coordinate
     private static String destinationLatLng ;
     private static LatLng destinationCoord ;
+
+    //location related
+    protected int currentSpeed = 0 ;
+    protected double currentLatitude = 0.0;
+    protected double currentLongitude = 0.0;
+
+    //sqlite
+    DatabaseHandler db ;
 
     //Geofence related
     protected List<Geofence> mCurrentGeofences ;
@@ -155,13 +166,26 @@ public class BackgroundLocationService extends Service implements
         if(mGyrometer != null){
             isGyroExist = true ;
             mSensorManager.registerListener(this, mGyrometer, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
-            Log.i("LocationService","Accelerometer registered");
+            Log.i("LocationService","Gyrometer registered");
         }
         else{
             isGyroExist = false ;
-            Log.e("LocationService","Accelerometer is not registered");
+            Log.e("LocationService","Gyrometer is not registered");
         }
 
+        mRotationVector = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+
+        if(mRotationVector != null){
+            isRotationVectorExist = true ;
+            mSensorManager.registerListener(this, mRotationVector, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            Log.i("LocationService","RotationVector registered");
+        }
+        else{
+            isRotationVectorExist = false ;
+            Log.e("LocationService","RotationVector is not registered");
+        }
+
+        db = new DatabaseHandler(this);
 
     }
 
@@ -244,11 +268,13 @@ public class BackgroundLocationService extends Service implements
         String msg = Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude());
 
-        int speed = ValueRounder.roundDecimal(location.getSpeed() * Constants.HOUR_MULTIPLIER * Constants.UNIT_MULTIPLIERS, 0) ;
+        currentSpeed = ValueRounder.roundDecimal(location.getSpeed() * Constants.HOUR_MULTIPLIER * Constants.UNIT_MULTIPLIERS, 0) ;
+        currentLatitude = location.getLatitude();
+        currentLongitude = location.getLongitude();
 
         mVehicleLocation.child(fbPlatNo).child("Latitude").setValue(String.valueOf(location.getLatitude()));
         mVehicleLocation.child(fbPlatNo).child("Longitude").setValue(String.valueOf(location.getLongitude()));
-        mVehicleLocation.child(fbPlatNo).child("Speed").setValue(String.valueOf(speed));
+        mVehicleLocation.child(fbPlatNo).child("Speed").setValue(String.valueOf(currentSpeed));
         Log.d("debug", msg);
         //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         appendLog(msg, Constants.LOCATION_FILE);
@@ -336,7 +362,7 @@ public class BackgroundLocationService extends Service implements
         }
 
         //Unregister sensor listener
-        if( isAcceExist ){
+        if( isAcceExist || isGyroExist ){
             mSensorManager.unregisterListener(this);
         }
 
@@ -402,6 +428,26 @@ public class BackgroundLocationService extends Service implements
             if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
                 mFusedSensorManager.setAcceValue(event.values);
                 mFusedSensorManager.calcAccelometer(SensorManager.GRAVITY_EARTH);
+                SensorDatabase tempSensorHolder = new SensorDatabase();
+                tempSensorHolder.latitude = currentLatitude ;
+                tempSensorHolder.longitude = currentLongitude ;
+                tempSensorHolder.speed = currentSpeed ;
+                tempSensorHolder.p_value = mFusedSensorManager.getProcessedAcceValue();
+                tempSensorHolder.r_value = (float) Math.sqrt(event.values[0]*event.values[0] + event.values[1]*event.values[1]
+                                            + event.values[2]*event.values[2]);
+                db.addRecordToAccTable(tempSensorHolder);
+            }
+        }
+
+        if(isRotationVectorExist){
+            if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
+                SensorDatabase tempSensorHolder = new SensorDatabase();
+                tempSensorHolder.latitude = currentLatitude ;
+                tempSensorHolder.longitude = currentLongitude ;
+                tempSensorHolder.speed = currentSpeed ;
+                tempSensorHolder.r_value = (float) Math.sqrt(event.values[0]*event.values[0] + event.values[1]*event.values[1]
+                        + event.values[2]*event.values[2]);
+                db.addRecordToRotationTable(tempSensorHolder);
             }
         }
 
