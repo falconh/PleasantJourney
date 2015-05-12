@@ -153,7 +153,7 @@ public class BackgroundLocationService extends Service implements
 
         if(mAccelerometer != null){
             isAcceExist = true ;
-            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
             Log.i("LocationService","Accelerometer registered");
         }
         else{
@@ -165,7 +165,7 @@ public class BackgroundLocationService extends Service implements
 
         if(mGyrometer != null){
             isGyroExist = true ;
-            mSensorManager.registerListener(this, mGyrometer, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            mSensorManager.registerListener(this, mGyrometer, SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
             Log.i("LocationService","Gyrometer registered");
         }
         else{
@@ -177,7 +177,7 @@ public class BackgroundLocationService extends Service implements
 
         if(mRotationVector != null){
             isRotationVectorExist = true ;
-            mSensorManager.registerListener(this, mRotationVector, SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM);
+            mSensorManager.registerListener(this, mRotationVector, SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
             Log.i("LocationService","RotationVector registered");
         }
         else{
