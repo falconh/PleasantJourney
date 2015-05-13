@@ -42,6 +42,9 @@ public class Constants {
 
     public static final LatLngBounds MALAYSIA_VIEW = new LatLngBounds(southWest,northEast);
 
+    //Sensor related
+    public static final float RATIO_O = (float) 0.3 ;
+
 
     /**
      * Suppress default constructor for noninstantiability

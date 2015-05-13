@@ -77,6 +77,11 @@ public class BackgroundLocationService extends Service implements
     private boolean isAcceExist ;
     private boolean isGyroExist;
     private boolean isRotationVectorExist;
+    private boolean previousFusedSensorValue = false;
+    private boolean currentFusedSensorValue = false;
+    private long number_of_sensor_data = 0;
+    private double model_stable = 0 ;
+
 
     // Flag that indicates if a request is underway.
     private boolean mInProgress;
@@ -94,6 +99,12 @@ public class BackgroundLocationService extends Service implements
 
     //sqlite
     DatabaseHandler db ;
+
+    //Broadcast related
+    public static final String LOCATION_BROADCAST_ACTION = "com.example.han.pleasantjourney.locationevent";
+    public static final String SENSOR_BROADCAST_ACTION = "com.example.han.pleasantjourney.sensorevent";
+    Intent locationIntent;
+    Intent sensorIntent;
 
     //Geofence related
     protected List<Geofence> mCurrentGeofences ;
@@ -187,6 +198,9 @@ public class BackgroundLocationService extends Service implements
 
         db = new DatabaseHandler(this);
 
+        locationIntent = new Intent(LOCATION_BROADCAST_ACTION);
+        sensorIntent = new Intent(SENSOR_BROADCAST_ACTION);
+
     }
 
     private boolean servicesConnected() {
@@ -258,7 +272,7 @@ public class BackgroundLocationService extends Service implements
         // The final argument to {@code requestLocationUpdates()} is a LocationListener
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
         LocationServices.FusedLocationApi.requestLocationUpdates(
-               mLocationClient, mLocationRequest, this);
+                mLocationClient, mLocationRequest, this);
     }
 
     // Define the callback method that receives location updates
@@ -275,6 +289,9 @@ public class BackgroundLocationService extends Service implements
         mVehicleLocation.child(fbPlatNo).child("Latitude").setValue(String.valueOf(location.getLatitude()));
         mVehicleLocation.child(fbPlatNo).child("Longitude").setValue(String.valueOf(location.getLongitude()));
         mVehicleLocation.child(fbPlatNo).child("Speed").setValue(String.valueOf(currentSpeed));
+
+        sendLocationUpdatesToUI();
+
         Log.d("debug", msg);
         //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         appendLog(msg, Constants.LOCATION_FILE);
@@ -437,6 +454,31 @@ public class BackgroundLocationService extends Service implements
                                             + event.values[2]*event.values[2]);
                 tempSensorHolder.platno = fbPlatNo;
                 db.addRecordToAccTable(tempSensorHolder);
+
+                model_stable = (model_stable*number_of_sensor_data + tempSensorHolder.p_value)/(number_of_sensor_data+1) ;
+                number_of_sensor_data++;
+
+                if(model_stable != 0.0){
+                    if(tempSensorHolder.p_value > model_stable){
+                        if((tempSensorHolder.p_value - model_stable)/model_stable > Constants.RATIO_O){
+                            previousFusedSensorValue = currentFusedSensorValue;
+                            currentFusedSensorValue = true ;
+                        }
+                        else{
+                            previousFusedSensorValue = currentFusedSensorValue;
+                            currentFusedSensorValue = false ;
+                        }
+                    }
+                    else{
+                        previousFusedSensorValue = currentFusedSensorValue;
+                        currentFusedSensorValue = false ;
+                    }
+
+
+                }
+
+                sendSensorUpdatesToUI();
+
             }
         }
 
@@ -449,7 +491,7 @@ public class BackgroundLocationService extends Service implements
                 tempSensorHolder.r_value = (float) Math.sqrt(event.values[0]*event.values[0] + event.values[1]*event.values[1]
                         + event.values[2]*event.values[2]);
                 tempSensorHolder.platno = fbPlatNo;
-                db.addRecordToRotationTable(tempSensorHolder);
+                //db.addRecordToRotationTable(tempSensorHolder);
             }
         }
 
@@ -463,6 +505,25 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    protected void sendLocationUpdatesToUI(){
+
+        locationIntent.putExtra("currentLatitude", currentLatitude);
+        locationIntent.putExtra("currentLongitude", currentLongitude);
+        locationIntent.putExtra("currentSpeed", currentSpeed);
+
+        sendBroadcast(locationIntent);
+
+        Log.i("LocationBroadCast","LocationBroadcastSent");
+    }
+
+    protected void sendSensorUpdatesToUI(){
+
+        if(previousFusedSensorValue != currentFusedSensorValue){
+            sensorIntent.putExtra("currentState" , Boolean.toString(currentFusedSensorValue));
+            sendBroadcast(sensorIntent);
+        }
     }
 
 }

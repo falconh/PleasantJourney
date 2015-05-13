@@ -80,6 +80,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_margin="8dp"
+            android:id="@+id/cardview_speed"
             cardview:cardCornerRadius="4dp">
 
             <RelativeLayout
@@ -135,6 +136,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_margin="8dp"
+            android:id="@+id/cardview_vehicle_state"
             cardview:cardCornerRadius="4dp">
 
             <RelativeLayout

@@ -89,6 +89,24 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         db.close(); // Closing database connection
     }
 
+    public float getAverage(String platno){
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        String EXTRACT_AVERAGE_QUERY = "SELECT avg(p_value) FROM " + TABLE_ACCELEROMETER
+                                        + " WHERE platno=\"" + platno + "\"";
+
+        Cursor cursor = db.rawQuery(EXTRACT_AVERAGE_QUERY, null);
+
+        float average = (float) 0.0 ;
+
+        if(cursor.moveToFirst())
+        {
+            average = cursor.getFloat(0);
+        }
+
+        return average;
+    }
+
     void addRecordToRotationTable(SensorDatabase sensorRecord) {
         SQLiteDatabase db = this.getWritableDatabase();
 

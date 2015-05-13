@@ -1,6 +1,10 @@
 package com.example.han.pleasantjourney;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Color;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,6 +13,7 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import com.firebase.client.* ;
+import android.support.v7.widget.CardView;
 
 import java.util.Map;
 
@@ -19,11 +24,19 @@ public class TrackingActivity extends ActionBarActivity {
     protected TextView Latitude ;
     protected TextView Longitude ;
     protected TextView Speed ;
+    protected CardView speedCardView;
+    protected CardView sensorCardView;
     protected Firebase falconhRef ;
     protected Firebase mVehicleLocation;
     protected String platNo ;
     protected String destination ;
     private String destinationLatLng;
+
+    protected static double currentLatitude ;
+    protected static double currentLongitude;
+    protected static int currentSpeed ;
+
+    IntentFilter mIntentFilter ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,9 +44,17 @@ public class TrackingActivity extends ActionBarActivity {
         setContentView(R.layout.activity_tracking);
         Firebase.setAndroidContext(this);
 
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(BackgroundLocationService.LOCATION_BROADCAST_ACTION);
+        mIntentFilter.addAction(BackgroundLocationService.SENSOR_BROADCAST_ACTION);
+
+        registerReceiver(broadcastReceiver, mIntentFilter);
+
         Latitude = (TextView) findViewById(R.id.textview_value_latitude);
         Longitude = (TextView)findViewById(R.id.textview_value_longitude);
         Speed = (TextView) findViewById(R.id.textview_value_current_speed);
+        speedCardView = (CardView) findViewById(R.id.cardview_speed);
+        sensorCardView = (CardView) findViewById(R.id.cardview_vehicle_state);
 
         platNo = getIntent().getStringExtra("platno");
         destination = getIntent().getStringExtra("destination");
@@ -56,9 +77,9 @@ public class TrackingActivity extends ActionBarActivity {
                     String longi = (String)((Map)value).get("Longitude");
                     String speed = (String)((Map)value).get("Speed");
 
-                    Latitude.setText(lat);
-                    Longitude.setText(longi);
-                    Speed.setText(speed);
+                    //Latitude.setText(lat);
+                    //Longitude.setText(longi);
+                    //Speed.setText(speed);
                     //Toast.makeText(getApplicationContext(), "Your Location is - \nLat: " + lat + "\nLong: " + longi, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -84,6 +105,7 @@ public class TrackingActivity extends ActionBarActivity {
     {
         super.onDestroy();
         this.stopService(mServiceIntent);
+        unregisterReceiver(broadcastReceiver);
         Log.i("tracker","stop");
     }
 
@@ -108,4 +130,37 @@ public class TrackingActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private void updateLocationUI(){
+        Latitude.setText(String.valueOf(currentLatitude));
+        Longitude.setText(String.valueOf(currentLongitude));
+        Speed.setText(String.valueOf(currentSpeed));
+    }
+
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(BackgroundLocationService.LOCATION_BROADCAST_ACTION)) {
+                double defaultValue = 0.00 ;
+                currentLatitude = intent.getDoubleExtra("currentLatitude", defaultValue);
+                currentLongitude = intent.getDoubleExtra("currentLongitude", defaultValue);
+                currentSpeed = intent.getIntExtra("currentSpeed", 0);
+                updateLocationUI();
+
+            }
+            else if(intent.getAction().equals(BackgroundLocationService.SENSOR_BROADCAST_ACTION)){
+                String state = intent.getStringExtra("currentState");
+
+                if( state.equals("true")){
+                    sensorCardView.setCardBackgroundColor(Color.RED);
+                }
+                else{
+                    sensorCardView.setCardBackgroundColor(Color.WHITE);
+                }
+
+                Log.e("StatecardviewChanged", "state :" + state);
+            }
+        }
+    };
+
 }
