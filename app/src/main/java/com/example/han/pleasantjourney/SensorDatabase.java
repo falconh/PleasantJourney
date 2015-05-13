@@ -10,5 +10,6 @@ public class SensorDatabase {
     public int speed;
     public float p_value;
     public float r_value;
+    public String platno;
 
 }

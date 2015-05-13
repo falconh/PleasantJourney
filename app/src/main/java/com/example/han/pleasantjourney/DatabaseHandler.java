@@ -19,7 +19,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
 
     // Database Name
-    private static final String DATABASE_NAME = "sensorsManager";
+    private static final String DATABASE_NAME = "DataCollect";
 
     // Contacts table name
     private static final String TABLE_ACCELEROMETER = "accelerometer";
@@ -32,6 +32,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String KEY_SPEED = "speed";
     private static final String KEY_PROCESSED_VALUE = "p_value";
     private static final String KEY_RAW_VALUE = "r_value";
+    private static final String KEY_PLAT_NO = "platno";
 
     public DatabaseHandler(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -43,11 +44,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String CREATE_ACCELEROMETER_TABLE = "CREATE TABLE " + TABLE_ACCELEROMETER + "("
                 + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + KEY_LAT + " REAL,"
                 + KEY_LONG + " REAL," + KEY_SPEED + " INTEGER,"  + KEY_PROCESSED_VALUE + " REAL,"
+                + KEY_PLAT_NO + " TEXT,"
                 + KEY_RAW_VALUE + " REAL" + ")";
 
         String CREATE_ROTATION_VECTOR_TABLE = "CREATE TABLE " + TABLE_ROTATION_VECTOR + "("
                 + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + KEY_LAT + " REAL,"
-                + KEY_LONG + " REAL," + KEY_SPEED + " INTEGER,"
+                + KEY_LONG + " REAL," + KEY_SPEED + " INTEGER," + KEY_PLAT_NO + " TEXT,"
                 + KEY_RAW_VALUE + " REAL" + ")";
 
         db.execSQL(CREATE_ACCELEROMETER_TABLE);
@@ -80,6 +82,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_SPEED, sensorRecord.speed);
         values.put(KEY_PROCESSED_VALUE, sensorRecord.p_value);
         values.put(KEY_RAW_VALUE, sensorRecord.r_value);
+        values.put(KEY_PLAT_NO, sensorRecord.platno);
 
         // Inserting Row
         db.insert(TABLE_ACCELEROMETER, null, values);
@@ -94,6 +97,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_LONG, sensorRecord.longitude); // Contact Phone
         values.put(KEY_SPEED, sensorRecord.speed);
         values.put(KEY_RAW_VALUE, sensorRecord.r_value);
+        values.put(KEY_PLAT_NO, sensorRecord.platno);
 
         // Inserting Row
         db.insert(TABLE_ROTATION_VECTOR, null, values);

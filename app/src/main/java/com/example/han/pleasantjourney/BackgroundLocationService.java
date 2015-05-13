@@ -435,6 +435,7 @@ public class BackgroundLocationService extends Service implements
                 tempSensorHolder.p_value = mFusedSensorManager.getProcessedAcceValue();
                 tempSensorHolder.r_value = (float) Math.sqrt(event.values[0]*event.values[0] + event.values[1]*event.values[1]
                                             + event.values[2]*event.values[2]);
+                tempSensorHolder.platno = fbPlatNo;
                 db.addRecordToAccTable(tempSensorHolder);
             }
         }
@@ -447,6 +448,7 @@ public class BackgroundLocationService extends Service implements
                 tempSensorHolder.speed = currentSpeed ;
                 tempSensorHolder.r_value = (float) Math.sqrt(event.values[0]*event.values[0] + event.values[1]*event.values[1]
                         + event.values[2]*event.values[2]);
+                tempSensorHolder.platno = fbPlatNo;
                 db.addRecordToRotationTable(tempSensorHolder);
             }
         }
