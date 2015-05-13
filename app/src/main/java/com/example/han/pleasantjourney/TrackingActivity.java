@@ -24,6 +24,7 @@ public class TrackingActivity extends ActionBarActivity {
     protected TextView Latitude ;
     protected TextView Longitude ;
     protected TextView Speed ;
+    protected TextView VehicleState ;
     protected CardView speedCardView;
     protected CardView sensorCardView;
     protected Firebase falconhRef ;
@@ -55,6 +56,7 @@ public class TrackingActivity extends ActionBarActivity {
         Speed = (TextView) findViewById(R.id.textview_value_current_speed);
         speedCardView = (CardView) findViewById(R.id.cardview_speed);
         sensorCardView = (CardView) findViewById(R.id.cardview_vehicle_state);
+        VehicleState = (TextView) findViewById(R.id.textview_value_sensorAlert);
 
         platNo = getIntent().getStringExtra("platno");
         destination = getIntent().getStringExtra("destination");
@@ -153,9 +155,11 @@ public class TrackingActivity extends ActionBarActivity {
 
                 if( state.equals("true")){
                     sensorCardView.setCardBackgroundColor(Color.RED);
+                    VehicleState.setText("Not Stable");
                 }
                 else{
                     sensorCardView.setCardBackgroundColor(Color.WHITE);
+                    VehicleState.setText("Stable");
                 }
 
                 Log.e("StatecardviewChanged", "state :" + state);
