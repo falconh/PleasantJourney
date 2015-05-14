@@ -45,6 +45,9 @@ public class Constants {
     //Sensor related
     public static final float RATIO_O = (float) 0.3 ;
 
+    //Default Speed Limit
+    public static final int DEFAULT_SPEED_LIMIT = 110 ;
+
 
     /**
      * Suppress default constructor for noninstantiability

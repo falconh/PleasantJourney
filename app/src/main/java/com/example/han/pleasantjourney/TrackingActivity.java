@@ -1,10 +1,12 @@
 package com.example.han.pleasantjourney;
 
 import android.content.BroadcastReceiver;
+import android.os.AsyncTask;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +17,9 @@ import android.widget.TextView;
 import com.firebase.client.* ;
 import android.support.v7.widget.CardView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.Map;
 
 
@@ -24,6 +29,7 @@ public class TrackingActivity extends ActionBarActivity {
     protected TextView Latitude ;
     protected TextView Longitude ;
     protected TextView Speed ;
+    protected TextView SpeedLimit;
     protected TextView VehicleState ;
     protected CardView speedCardView;
     protected CardView sensorCardView;
@@ -35,7 +41,8 @@ public class TrackingActivity extends ActionBarActivity {
 
     protected static double currentLatitude ;
     protected static double currentLongitude;
-    protected static int currentSpeed ;
+    protected static int currentSpeed = 0;
+    protected static int currentSpeedLimit = 0;
 
     IntentFilter mIntentFilter ;
 
@@ -54,6 +61,7 @@ public class TrackingActivity extends ActionBarActivity {
         Latitude = (TextView) findViewById(R.id.textview_value_latitude);
         Longitude = (TextView)findViewById(R.id.textview_value_longitude);
         Speed = (TextView) findViewById(R.id.textview_value_current_speed);
+        SpeedLimit = (TextView) findViewById(R.id.textview_value_speedLimit);
         speedCardView = (CardView) findViewById(R.id.cardview_speed);
         sensorCardView = (CardView) findViewById(R.id.cardview_vehicle_state);
         VehicleState = (TextView) findViewById(R.id.textview_value_sensorAlert);
@@ -108,7 +116,7 @@ public class TrackingActivity extends ActionBarActivity {
         super.onDestroy();
         this.stopService(mServiceIntent);
         unregisterReceiver(broadcastReceiver);
-        Log.i("tracker","stop");
+        Log.i("tracker", "stop");
     }
 
     @Override
@@ -133,7 +141,29 @@ public class TrackingActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void updateLocationUI(){
+    protected String buildOverpassURL(){
+        final String OVERPASS_URL = "http://overpass-api.de/api/interpreter?data=[out:json];way(around:20.0,"
+                                    + String.valueOf(currentLatitude) + "," + String.valueOf(currentLongitude)
+                                    + ")[maxspeed];out;";
+
+        Log.e("OverPass_URL", OVERPASS_URL);
+
+        return OVERPASS_URL ;
+    }
+
+    protected void updateSpeedLimitUI(){
+        SpeedLimit.setText(String.valueOf(currentSpeedLimit));
+
+        if(currentSpeed > currentSpeedLimit){
+            speedCardView.setCardBackgroundColor(Color.RED);
+        }
+        else{
+            speedCardView.setCardBackgroundColor(Color.WHITE);
+        }
+
+    }
+
+    protected void updateLocationUI(){
         Latitude.setText(String.valueOf(currentLatitude));
         Longitude.setText(String.valueOf(currentLongitude));
         Speed.setText(String.valueOf(currentSpeed));
@@ -148,6 +178,8 @@ public class TrackingActivity extends ActionBarActivity {
                 currentLongitude = intent.getDoubleExtra("currentLongitude", defaultValue);
                 currentSpeed = intent.getIntExtra("currentSpeed", 0);
                 updateLocationUI();
+                new SpeedLimitTask().execute(buildOverpassURL());
+
 
             }
             else if(intent.getAction().equals(BackgroundLocationService.SENSOR_BROADCAST_ACTION)){
@@ -166,5 +198,55 @@ public class TrackingActivity extends ActionBarActivity {
             }
         }
     };
+    private class SpeedLimitTask extends AsyncTask<String, Void, String> {
 
+        @Override
+        protected String doInBackground(String... params){
+            String data = "";
+            try{
+                HttpConnection http = new HttpConnection();
+                data = http.readUrl(params[0]);
+            }catch(Exception e){
+                Log.e("SpeedLimitTask", e.toString());
+            }
+
+            JSONObject overpassJSON;
+            JSONObject tagsContent;
+            JSONArray roadElement ;
+            String speedLimit = null ;
+
+            if( data != null ){
+                try{
+                    overpassJSON = new JSONObject(data);
+
+                    roadElement = overpassJSON.getJSONArray("elements");
+
+                    if(roadElement != null)
+                    {
+                        tagsContent = roadElement.getJSONObject(0).getJSONObject("tags");
+
+                        if(tagsContent != null){
+                            speedLimit = tagsContent.getString("maxspeed");
+                        }
+                    }
+
+                }
+                catch(JSONException e){
+                    Log.e("SpeedLimitJsonParse", e.toString());
+                }
+            }
+            return speedLimit;
+        }
+
+        @Override
+        protected void onPostExecute(String result){
+            if(result != null){
+                currentSpeedLimit = Integer.parseInt(result);
+                updateSpeedLimitUI();
+            }
+            else if(currentSpeedLimit == 0){
+                currentSpeedLimit = Constants.DEFAULT_SPEED_LIMIT ;
+            }
+        }
+    }
 }
