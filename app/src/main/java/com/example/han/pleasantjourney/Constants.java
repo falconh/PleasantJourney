@@ -43,10 +43,10 @@ public class Constants {
     public static final LatLngBounds MALAYSIA_VIEW = new LatLngBounds(southWest,northEast);
 
     //Sensor related
-    public static final float RATIO_O = (float) 0.3 ;
+    public static final float RATIO_O = (float) 0.1 ;
 
     //Default Speed Limit
-    public static final int DEFAULT_SPEED_LIMIT = 110 ;
+    public static final int DEFAULT_SPEED_LIMIT = 50 ;
 
     public static final String GOOGLE_API_SERVER_KEY = "AIzaSyAUz96HRFxcRfje8Hqk8us6-ABOWM08OYw";
 

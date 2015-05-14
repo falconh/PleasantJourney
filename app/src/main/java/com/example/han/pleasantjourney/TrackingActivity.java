@@ -342,6 +342,7 @@ public class TrackingActivity extends ActionBarActivity {
             }
             else if(currentSpeedLimit == 0){
                 currentSpeedLimit = Constants.DEFAULT_SPEED_LIMIT ;
+                updateSpeedLimitUI();
             }
         }
     }
