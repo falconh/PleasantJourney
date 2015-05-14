@@ -50,6 +50,11 @@ public class Constants {
 
     public static final String GOOGLE_API_SERVER_KEY = "AIzaSyAUz96HRFxcRfje8Hqk8us6-ABOWM08OYw";
 
+    //Countdown timer related
+    public static final long COUNTDOWN_START = 3000;
+
+    public static final long COUNTDOWN_INTERVAL = 1000;
+
 
     /**
      * Suppress default constructor for noninstantiability

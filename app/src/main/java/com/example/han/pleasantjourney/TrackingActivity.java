@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -53,6 +54,8 @@ public class TrackingActivity extends ActionBarActivity {
     protected static int currentSpeedLimit = 0;
     protected static int etaInSecondsInt = 0 ;
     protected static boolean isETAUpdated = false;
+    protected UICountDownTimer mCountDownTimer ;
+    protected boolean isCountDownRunning ;
 
     IntentFilter mIntentFilter ;
 
@@ -79,6 +82,8 @@ public class TrackingActivity extends ActionBarActivity {
         platNo = getIntent().getStringExtra("platno");
         destination = getIntent().getStringExtra("destination");
         destinationLatLng = getIntent().getStringExtra("destinationLatLng");
+
+        mCountDownTimer = new UICountDownTimer(Constants.COUNTDOWN_START,Constants.COUNTDOWN_INTERVAL);
 
 
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
@@ -210,12 +215,16 @@ public class TrackingActivity extends ActionBarActivity {
                 String state = intent.getStringExtra("currentState");
 
                 if( state.equals("true")){
+
+                    if(isCountDownRunning){
+                        mCountDownTimer.cancel();
+                        isCountDownRunning = false;
+                    }
                     sensorCardView.setCardBackgroundColor(Color.RED);
                     VehicleState.setText("Not Stable");
-                }
-                else{
-                    sensorCardView.setCardBackgroundColor(Color.WHITE);
-                    VehicleState.setText("Stable");
+                    isCountDownRunning = true ;
+                    mCountDownTimer.start();
+
                 }
 
                 Log.e("StatecardviewChanged", "state :" + state);
@@ -334,6 +343,27 @@ public class TrackingActivity extends ActionBarActivity {
             else if(currentSpeedLimit == 0){
                 currentSpeedLimit = Constants.DEFAULT_SPEED_LIMIT ;
             }
+        }
+    }
+
+    private class UICountDownTimer extends CountDownTimer{
+
+
+        public UICountDownTimer(long starttime, long interval){
+            super(starttime,interval);
+        }
+
+        @Override
+        public void onFinish(){
+            sensorCardView.setCardBackgroundColor(Color.WHITE);
+            VehicleState.setText("Stable");
+            isCountDownRunning = false ;
+
+        }
+
+        @Override
+        public void onTick(long params){
+
         }
     }
 }
