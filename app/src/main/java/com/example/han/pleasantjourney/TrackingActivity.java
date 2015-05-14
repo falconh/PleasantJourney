@@ -15,12 +15,20 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import com.firebase.client.* ;
+import com.google.android.gms.maps.model.LatLng;
+
 import android.support.v7.widget.CardView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 
 public class TrackingActivity extends ActionBarActivity {
@@ -43,6 +51,8 @@ public class TrackingActivity extends ActionBarActivity {
     protected static double currentLongitude;
     protected static int currentSpeed = 0;
     protected static int currentSpeedLimit = 0;
+    protected static int etaInSecondsInt = 0 ;
+    protected static boolean isETAUpdated = false;
 
     IntentFilter mIntentFilter ;
 
@@ -141,6 +151,15 @@ public class TrackingActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    protected String buildDistanceMatrixURL(){
+
+        final String DISTANCE_MATRIX_URL = "https://maps.googleapis.com/maps/api/distancematrix/json?origins="
+                                            + String.valueOf(currentLatitude) + "," + String.valueOf(currentLongitude)
+                                            + "&destinations=" + destinationLatLng + "&key=" + Constants.GOOGLE_API_SERVER_KEY ;
+
+        return DISTANCE_MATRIX_URL;
+    }
+
     protected String buildOverpassURL(){
         final String OVERPASS_URL = "http://overpass-api.de/api/interpreter?data=[out:json];way(around:20.0,"
                                     + String.valueOf(currentLatitude) + "," + String.valueOf(currentLongitude)
@@ -178,6 +197,11 @@ public class TrackingActivity extends ActionBarActivity {
                 currentLongitude = intent.getDoubleExtra("currentLongitude", defaultValue);
                 currentSpeed = intent.getIntExtra("currentSpeed", 0);
                 updateLocationUI();
+
+                if(!isETAUpdated){
+                    new DistanceMatrixTask().execute(buildDistanceMatrixURL());
+                }
+
                 new SpeedLimitTask().execute(buildOverpassURL());
 
 
@@ -198,6 +222,69 @@ public class TrackingActivity extends ActionBarActivity {
             }
         }
     };
+
+    private class DistanceMatrixTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params){
+            String data = "";
+            try{
+                HttpConnection http = new HttpConnection();
+                data = http.readUrl(params[0]);
+            }catch(Exception e){
+                Log.e("SpeedLimitTask", e.toString());
+            }
+
+            String etaInSeconds = null;
+            JSONObject distanceMatrixJSON ;
+            JSONArray rowsJSON ;
+            JSONArray elementsJSON;
+            JSONObject durationJSON ;
+
+            if( data != null ){
+                try{
+                    distanceMatrixJSON = new JSONObject(data);
+
+                    if(distanceMatrixJSON != null) {
+                        rowsJSON = distanceMatrixJSON.getJSONArray("rows");
+
+                        if(rowsJSON != null){
+                            elementsJSON = rowsJSON.getJSONObject(0).getJSONArray("elements");
+                            durationJSON = elementsJSON.getJSONObject(0).getJSONObject("duration");
+                            etaInSeconds = durationJSON.getString("value");
+
+                        }
+                    }
+
+
+                }catch(JSONException e){
+                    Log.e("DistanceMatrixTask", e.toString());
+                }
+            }
+
+
+            return etaInSeconds ;
+        }
+
+        @Override
+        protected void onPostExecute(String results){
+            if(results != null)
+            {
+                etaInSecondsInt = Integer.parseInt(results);
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+8:00"));
+                Date currentLocalTime = cal.getTime();
+                DateFormat date = new SimpleDateFormat("HH:mm");
+
+                Date ETA = new Date(currentLocalTime.getTime() + etaInSecondsInt*1000) ;
+                date.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
+
+
+                mVehicleLocation.child(platNo).child("ETA").setValue(date.format(ETA));
+                isETAUpdated = true ;
+            }
+        }
+    }
+
     private class SpeedLimitTask extends AsyncTask<String, Void, String> {
 
         @Override

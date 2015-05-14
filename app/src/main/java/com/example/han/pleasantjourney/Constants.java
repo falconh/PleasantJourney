@@ -48,6 +48,8 @@ public class Constants {
     //Default Speed Limit
     public static final int DEFAULT_SPEED_LIMIT = 110 ;
 
+    public static final String GOOGLE_API_SERVER_KEY = "AIzaSyAUz96HRFxcRfje8Hqk8us6-ABOWM08OYw";
+
 
     /**
      * Suppress default constructor for noninstantiability
