@@ -91,6 +91,7 @@ public class BackgroundLocationService extends Service implements
     //destination coordinate
     private static String destinationLatLng ;
     private static LatLng destinationCoord ;
+    private static String journeyID ;
 
     //location related
     protected int currentSpeed = 0 ;
@@ -224,6 +225,7 @@ public class BackgroundLocationService extends Service implements
 
         fbPlatNo = intent.getStringExtra("platno");
         destinationLatLng = intent.getStringExtra("destinationLatLng");
+        journeyID = intent.getStringExtra("journeyID");
 
         LatLngStringConvert tempConverter = new LatLngStringConvert(destinationLatLng);
         tempConverter.convertStringLatLng();
@@ -286,9 +288,9 @@ public class BackgroundLocationService extends Service implements
         currentLatitude = location.getLatitude();
         currentLongitude = location.getLongitude();
 
-        mVehicleLocation.child(fbPlatNo).child("Latitude").setValue(String.valueOf(location.getLatitude()));
-        mVehicleLocation.child(fbPlatNo).child("Longitude").setValue(String.valueOf(location.getLongitude()));
-        mVehicleLocation.child(fbPlatNo).child("Speed").setValue(String.valueOf(currentSpeed));
+        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Latitude").setValue(String.valueOf(location.getLatitude()));
+        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Longitude").setValue(String.valueOf(location.getLongitude()));
+        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Speed").setValue(String.valueOf(currentSpeed));
 
         sendLocationUpdatesToUI();
 
@@ -458,7 +460,7 @@ public class BackgroundLocationService extends Service implements
                 model_stable = (model_stable*number_of_sensor_data + tempSensorHolder.p_value)/(number_of_sensor_data+1) ;
                 number_of_sensor_data++;
 
-                if(model_stable != 0.0){
+                if(model_stable != 0.0 && number_of_sensor_data > Constants.CALIBRATION_THRESHOLD){
                     if(tempSensorHolder.p_value > model_stable){
                         if((tempSensorHolder.p_value - model_stable)/model_stable > Constants.RATIO_O){
                             previousFusedSensorValue = currentFusedSensorValue;

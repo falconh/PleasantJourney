@@ -47,6 +47,7 @@ public class TrackingActivity extends ActionBarActivity {
     protected String platNo ;
     protected String destination ;
     private String destinationLatLng;
+    private String journeyID ;
 
     protected static double currentLatitude ;
     protected static double currentLongitude;
@@ -82,43 +83,24 @@ public class TrackingActivity extends ActionBarActivity {
         platNo = getIntent().getStringExtra("platno");
         destination = getIntent().getStringExtra("destination");
         destinationLatLng = getIntent().getStringExtra("destinationLatLng");
+        journeyID = getIntent().getStringExtra("journeyID");
+
+
+        Log.e("journeyID", journeyID);
 
         mCountDownTimer = new UICountDownTimer(Constants.COUNTDOWN_START,Constants.COUNTDOWN_INTERVAL);
 
 
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
         mVehicleLocation = falconhRef.child("vehicleLocation");
-        mVehicleLocation.child(platNo).child("Destination").setValue(destination);
-        mVehicleLocation.child(platNo).child("DestinationLatLng").setValue(destinationLatLng);
+        mVehicleLocation.child(platNo).child(journeyID).child("Destination").setValue(destination);
+        mVehicleLocation.child(platNo).child(journeyID).child("DestinationLatLng").setValue(destinationLatLng);
 
-        mVehicleLocation.child(platNo).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange( DataSnapshot snapshot )
-            {
-                Object value = snapshot.getValue();
-                if ( value != null )
-                {
-                    String lat = (String)((Map)value).get("Latitude");
-                    String longi = (String)((Map)value).get("Longitude");
-                    String speed = (String)((Map)value).get("Speed");
-
-                    //Latitude.setText(lat);
-                    //Longitude.setText(longi);
-                    //Speed.setText(speed);
-                    //Toast.makeText(getApplicationContext(), "Your Location is - \nLat: " + lat + "\nLong: " + longi, Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError arg0) {
-                // TODO Auto-generated method stub
-
-            }
-        });
 
         mServiceIntent = new Intent(this,BackgroundLocationService.class);
         mServiceIntent.putExtra("platno",platNo);
         mServiceIntent.putExtra("destinationLatLng",destinationLatLng);
+        mServiceIntent.putExtra("journeyID",journeyID);
         this.startService(mServiceIntent);
         Log.e("tracker", "started");
 
@@ -175,16 +157,21 @@ public class TrackingActivity extends ActionBarActivity {
         return OVERPASS_URL ;
     }
 
+
     protected void updateSpeedLimitUI(){
         SpeedLimit.setText(String.valueOf(currentSpeedLimit));
 
+        updateSpeedCardUI();
+
+    }
+
+    protected void updateSpeedCardUI(){
         if(currentSpeed > currentSpeedLimit){
             speedCardView.setCardBackgroundColor(Color.RED);
         }
         else{
             speedCardView.setCardBackgroundColor(Color.WHITE);
         }
-
     }
 
     protected void updateLocationUI(){
@@ -202,6 +189,7 @@ public class TrackingActivity extends ActionBarActivity {
                 currentLongitude = intent.getDoubleExtra("currentLongitude", defaultValue);
                 currentSpeed = intent.getIntExtra("currentSpeed", 0);
                 updateLocationUI();
+                updateSpeedCardUI();
 
                 if(!isETAUpdated){
                     new DistanceMatrixTask().execute(buildDistanceMatrixURL());
@@ -288,7 +276,7 @@ public class TrackingActivity extends ActionBarActivity {
                 date.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
 
 
-                mVehicleLocation.child(platNo).child("ETA").setValue(date.format(ETA));
+                mVehicleLocation.child(platNo).child(journeyID).child("ETA").setValue(date.format(ETA));
                 isETAUpdated = true ;
             }
         }

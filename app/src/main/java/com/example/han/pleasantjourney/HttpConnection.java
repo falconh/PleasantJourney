@@ -21,6 +21,8 @@ public class HttpConnection {
         try {
             URL url = new URL(mapsApiDirectionsUrl);
             urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.setRequestProperty("Content-Type", "application/json");
             urlConnection.connect();
             iStream = urlConnection.getInputStream();
             BufferedReader br = new BufferedReader(new InputStreamReader(

@@ -43,7 +43,9 @@ public class Constants {
     public static final LatLngBounds MALAYSIA_VIEW = new LatLngBounds(southWest,northEast);
 
     //Sensor related
-    public static final float RATIO_O = (float) 0.1 ;
+    public static final float RATIO_O = (float) 0.15 ;
+
+    public static final long CALIBRATION_THRESHOLD = 80 ;
 
     //Default Speed Limit
     public static final int DEFAULT_SPEED_LIMIT = 50 ;
@@ -54,6 +56,8 @@ public class Constants {
     public static final long COUNTDOWN_START = 3000;
 
     public static final long COUNTDOWN_INTERVAL = 1000;
+
+    public static final String SERVER_IP = "192.168.1.2:8000";
 
 
     /**

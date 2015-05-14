@@ -1,6 +1,7 @@
 package com.example.han.pleasantjourney;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.ActionBar;
@@ -30,6 +31,16 @@ import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+
 
 public class MainActivity extends ActionBarActivity implements
         GoogleApiClient.OnConnectionFailedListener,
@@ -51,6 +62,8 @@ public class MainActivity extends ActionBarActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        destinationLatLng = new LatLng(0.0,0.0);
 
         mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
                 .addApi(Places.GEO_DATA_API)
@@ -128,23 +141,33 @@ public class MainActivity extends ActionBarActivity implements
 
             destinationLatLng = place.getLatLng();
             destinationName = place.getName().toString();
+
+            places.release();
         }
     };
 
     public void startActivityTwo(View view)
     {
 
-        Intent secondActivity = new Intent(getApplicationContext(), TrackingActivity.class);
-        secondActivity.putExtra("platno",platno.getText().toString());
+        new LocalDatabaseTask().execute(buildLocalDatabseURL());
+    }
+
+    protected String buildLocalDatabseURL(){
+
         if(destinationName == null ) {
-            secondActivity.putExtra("destination", destination.getText().toString());
+            destinationName = destination.getText().toString();
         }
-        else{
-            secondActivity.putExtra("destination", destinationName);
-        }
-        secondActivity.putExtra("destinationLatLng", Double.toString(destinationLatLng.latitude)
-                + "," + Double.toString(destinationLatLng.longitude));
-        startActivity(secondActivity);
+
+        String serverIP = Constants.SERVER_IP ;
+        String LOCAL_DATABASE_URL = "http://" + serverIP + "/register/journey"; /*+ "platno="
+                                            + platno.getText().toString() + "&destination="
+                                            + destinationName + "&dcoord="
+                                            + Double.toString(destinationLatLng.latitude)
+                                            + "," + Double.toString(destinationLatLng.longitude) ;*/
+
+        //LOCAL_DATABASE_URL = LOCAL_DATABASE_URL.replace(" ","%");
+
+        return LOCAL_DATABASE_URL ;
     }
 
     /**
@@ -188,4 +211,62 @@ public class MainActivity extends ActionBarActivity implements
         Log.e(LOG_TAG, "Google Places API connection suspended.");
     }
 
+    private class LocalDatabaseTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params){
+            String data = "";
+            Log.e("LocalDatabaseTask", "data is " + params[0]);
+            try{
+                RestClient http = new RestClient(params[0]);
+                http.AddParam("platno", platno.getText().toString());
+                http.AddParam("destination", destinationName);
+                http.AddParam("dcoord", Double.toString(destinationLatLng.latitude)
+                        + "," + Double.toString(destinationLatLng.longitude));
+
+                //data = http.readUrl(params[0]);
+                http.Execute(RestClient.RequestMethod.GET);
+                data = http.getResponse();
+                Log.e("LocalDatabaseTask", "data is " + data);
+                Log.e("LocalDatabaseTask", params[0]);
+            }catch(Exception e){
+                Log.e("LocalDatabaseTask", e.toString());
+            }
+
+            JSONObject journeyIDJSON ;
+            String journeyIDString = "" ;
+
+            try{
+                journeyIDJSON = new JSONObject(data);
+                journeyIDString = journeyIDJSON.getString("journeyid");
+            }catch(JSONException e){
+                Log.e("LocalDatabaseTask", e.toString());
+            }
+
+
+            return journeyIDString ;
+        }
+
+        @Override
+        protected void onPostExecute(String results){
+            if(results != null)
+            {
+                Intent secondActivity = new Intent(getApplicationContext(), TrackingActivity.class);
+                secondActivity.putExtra("platno",platno.getText().toString());
+                if(destinationName == null ) {
+                    destinationName = destination.getText().toString();
+                }
+
+                secondActivity.putExtra("destination", destinationName);
+
+
+
+                secondActivity.putExtra("destinationLatLng", Double.toString(destinationLatLng.latitude)
+                        + "," + Double.toString(destinationLatLng.longitude));
+
+                secondActivity.putExtra("journeyID", results);
+                startActivity(secondActivity);
+            }
+        }
+    }
 }
