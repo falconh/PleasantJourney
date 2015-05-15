@@ -48,6 +48,7 @@ public class MainActivity extends ActionBarActivity implements
 
     Toolbar mToolbar;
     private EditText platno;
+    private EditText server_IP;
     private static final String LOG_TAG = "MainActivity";
     private static final int GOOGLE_API_CLIENT_ID = 0;
     private AutoCompleteTextView destination;
@@ -75,6 +76,7 @@ public class MainActivity extends ActionBarActivity implements
 
         platno = (EditText) findViewById(R.id.platno);
         destination = (AutoCompleteTextView) findViewById(R.id.destination);
+        server_IP = (EditText) findViewById(R.id.server_ip);
 
         if (mToolbar != null) {
             setSupportActionBar(mToolbar);
@@ -158,7 +160,16 @@ public class MainActivity extends ActionBarActivity implements
             destinationName = destination.getText().toString();
         }
 
-        String serverIP = Constants.SERVER_IP ;
+
+        String serverIP = "";
+
+        if(server_IP.getText().toString() == null || server_IP.getText().toString().equals("")) {
+            serverIP = Constants.SERVER_IP;
+        }
+        else
+        {
+            serverIP = server_IP.getText().toString();
+        }
         String LOCAL_DATABASE_URL = "http://" + serverIP + "/register/journey"; /*+ "platno="
                                             + platno.getText().toString() + "&destination="
                                             + destinationName + "&dcoord="

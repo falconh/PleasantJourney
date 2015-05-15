@@ -11,6 +11,7 @@ package com.example.han.pleasantjourney;
         import java.util.ArrayList ;
         import java.util.Arrays ;
         import java.lang.Math ;
+        import java.util.Map;
 
         import android.app.* ;
         import android.os.* ;
@@ -57,6 +58,7 @@ public class BackgroundLocationService extends Service implements
     //Firebase + GeoFire
     protected Firebase falconhRef ;
     protected Firebase mVehicleLocation ;
+    protected Firebase mPresentationSwitch;
     protected Firebase mGeoFire ;
     protected Firebase mGeoFireData ;
     protected GeoFire mGeoFireHash ;
@@ -97,6 +99,7 @@ public class BackgroundLocationService extends Service implements
     protected int currentSpeed = 0 ;
     protected double currentLatitude = 0.0;
     protected double currentLongitude = 0.0;
+    protected int currentMode = 0 ;
 
     //sqlite
     DatabaseHandler db ;
@@ -128,6 +131,7 @@ public class BackgroundLocationService extends Service implements
         Log.e("firebase", "1");
         falconhRef = new Firebase("https://falconh.firebaseio.com") ;
         mVehicleLocation = falconhRef.child("vehicleLocation");
+        mPresentationSwitch = falconhRef.child("presentationSwitch");
         mGeoFire = falconhRef.child("GeoFire");
         mGeoFireData = mGeoFire.child("geoFireData");
         mGeoFireHash = new GeoFire(mGeoFire.child("geoFireHash"));
@@ -201,6 +205,40 @@ public class BackgroundLocationService extends Service implements
 
         locationIntent = new Intent(LOCATION_BROADCAST_ACTION);
         sensorIntent = new Intent(SENSOR_BROADCAST_ACTION);
+
+        mPresentationSwitch.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Object value = dataSnapshot.getValue();
+
+                if(value != null){
+                    String mode = (String)((Map)value).get("mode");
+
+                    currentMode = Integer.parseInt(mode);
+
+                    if(currentMode == 1){
+                        String lat = (String)((Map)value).get("Latitude");
+                        String longi = (String)((Map)value).get("Longitude");
+                        String speed = (String)((Map)value).get("Speed");
+
+                        currentLatitude = Double.parseDouble(lat);
+                        currentLongitude = Double.parseDouble(longi);
+                        currentSpeed = Integer.parseInt(speed);
+
+                        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Latitude").setValue(String.valueOf(currentLatitude));
+                        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Longitude").setValue(String.valueOf(currentLongitude));
+                        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Speed").setValue(String.valueOf(currentSpeed));
+
+                        sendLocationUpdatesToUI();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
 
     }
 
@@ -284,15 +322,17 @@ public class BackgroundLocationService extends Service implements
         String msg = Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude());
 
-        currentSpeed = ValueRounder.roundDecimal(location.getSpeed() * Constants.HOUR_MULTIPLIER * Constants.UNIT_MULTIPLIERS, 0) ;
-        currentLatitude = location.getLatitude();
-        currentLongitude = location.getLongitude();
+        if(currentMode == 0) {
+            currentSpeed = ValueRounder.roundDecimal(location.getSpeed() * Constants.HOUR_MULTIPLIER * Constants.UNIT_MULTIPLIERS, 0);
+            currentLatitude = location.getLatitude();
+            currentLongitude = location.getLongitude();
 
-        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Latitude").setValue(String.valueOf(location.getLatitude()));
-        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Longitude").setValue(String.valueOf(location.getLongitude()));
-        mVehicleLocation.child(fbPlatNo).child(journeyID).child("Speed").setValue(String.valueOf(currentSpeed));
+            mVehicleLocation.child(fbPlatNo).child(journeyID).child("Latitude").setValue(String.valueOf(location.getLatitude()));
+            mVehicleLocation.child(fbPlatNo).child(journeyID).child("Longitude").setValue(String.valueOf(location.getLongitude()));
+            mVehicleLocation.child(fbPlatNo).child(journeyID).child("Speed").setValue(String.valueOf(currentSpeed));
 
-        sendLocationUpdatesToUI();
+            sendLocationUpdatesToUI();
+        }
 
         Log.d("debug", msg);
         //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
