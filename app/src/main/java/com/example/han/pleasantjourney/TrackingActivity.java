@@ -97,12 +97,15 @@ public class TrackingActivity extends ActionBarActivity {
         mVehicleLocation.child(platNo).child(journeyID).child("DestinationLatLng").setValue(destinationLatLng);
 
 
+        isETAUpdated = false ;
+
         mServiceIntent = new Intent(this,BackgroundLocationService.class);
         mServiceIntent.putExtra("platno",platNo);
         mServiceIntent.putExtra("destinationLatLng",destinationLatLng);
         mServiceIntent.putExtra("journeyID",journeyID);
         this.startService(mServiceIntent);
         Log.e("tracker", "started");
+
 
 
     }

@@ -245,12 +245,14 @@ public class MainActivity extends ActionBarActivity implements
             }
 
             JSONObject journeyIDJSON ;
-            String journeyIDString = "" ;
+            String journeyIDString = "0" ;
 
             try{
                 journeyIDJSON = new JSONObject(data);
                 journeyIDString = journeyIDJSON.getString("journeyid");
             }catch(JSONException e){
+                Log.e("LocalDatabaseTask", e.toString());
+            }catch(Exception e){
                 Log.e("LocalDatabaseTask", e.toString());
             }
 
